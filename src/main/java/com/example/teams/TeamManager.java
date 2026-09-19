@@ -157,7 +157,7 @@ public final class TeamManager {
 
     public List<Team> top(int limit) {
         return teams.values().stream()
-                .sorted(Comparator.comparingInt(Team::kills).reversed()
+                .sorted(Comparator.comparingInt((Team t) -> -t.kills())
                         .thenComparingInt((Team t) -> -t.members().size()))
                 .limit(limit)
                 .toList();
