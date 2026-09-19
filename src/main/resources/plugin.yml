@@ -1,0 +1,25 @@
+name: TeamsDialog
+version: '${version}'
+main: com.example.teams.TeamsPlugin
+api-version: '26.2'
+description: Dialog-driven teams with roles, invites, homes, team chat and a leaderboard.
+authors: [You]
+
+commands:
+  team:
+    description: Open the team menu
+    usage: /team [invites|top|home|chat <msg>]
+    aliases: [teams]
+    permission: teams.use
+  tc:
+    description: Team chat (no args = toggle team chat mode)
+    usage: /tc [message]
+    permission: teams.use
+
+permissions:
+  teams.use:
+    description: Use the teams menu
+    default: true
+  teams.bypass.warmup:
+    description: Skip the team home teleport warmup
+    default: op

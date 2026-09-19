@@ -1,0 +1,11 @@
+# Maximum members per team
+max-members: 10
+
+# Seconds an invite stays valid
+invite-expire-seconds: 60
+
+# Seconds you must stand still before /team home teleports you (0 = instant)
+home-warmup-seconds: 3
+
+# Default friendly-fire setting shown when creating a team
+default-friendly-fire: false
