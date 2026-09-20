@@ -3,6 +3,7 @@ package com.example.teams;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -66,6 +67,8 @@ public final class TeamManager {
                         s.getString("tag", "TM"),
                         TeamColor.fromId(s.getString("color", "white")));
                 t.friendlyFire(s.getBoolean("friendly-fire", false));
+                t.custom(parseHex(s.getString("custom-color")));
+                t.gradientEnd(parseHex(s.getString("gradient-end")));
                 t.kills(s.getInt("kills", 0));
                 t.createdAt(s.getLong("created", System.currentTimeMillis()));
 
@@ -100,6 +103,8 @@ public final class TeamManager {
             yml.set(base + ".name", t.name());
             yml.set(base + ".tag", t.tag());
             yml.set(base + ".color", t.color().id());
+            if (t.custom() != null) yml.set(base + ".custom-color", t.custom().asHexString());
+            if (t.gradientEnd() != null) yml.set(base + ".gradient-end", t.gradientEnd().asHexString());
             yml.set(base + ".friendly-fire", t.friendlyFire());
             yml.set(base + ".kills", t.kills());
             yml.set(base + ".created", t.createdAt());
@@ -175,8 +180,8 @@ public final class TeamManager {
     /** Colours names in chat/tab/nametags and adds a [TAG] prefix. Friendly fire is handled by our listener. */
     public void refreshVisuals(Team t) {
         org.bukkit.scoreboard.Team st = sbTeam(t);
-        st.color(t.color().nearestNamed());
-        st.prefix(Component.text("[" + t.tag() + "] ", t.color().color()));
+        st.color(NamedTextColor.nearestTo(t.primary()));
+        st.prefix(t.colorize("[" + t.tag() + "]").append(Component.text(" ")));
         st.setAllowFriendlyFire(true);
         st.setCanSeeFriendlyInvisibles(true);
 
@@ -243,9 +248,9 @@ public final class TeamManager {
         }
         Role role = t.role(sender.getUniqueId());
         Component line = Component.textOfChildren(
-                Component.text("[Team] ", t.color().color(), TextDecoration.BOLD),
+                t.colorize("[Team] ").decorate(TextDecoration.BOLD),
                 Component.text(role.symbol() + " ", role.color()),
-                Component.text(sender.getName(), t.color().color()),
+                t.colorize(sender.getName()),
                 Component.text(" » ", NamedTextColor.DARK_GRAY),
                 message.colorIfAbsent(NamedTextColor.WHITE));
         broadcast(t, line);
@@ -371,16 +376,62 @@ public final class TeamManager {
         return null;
     }
 
+    // ------------------------------------------------------------------ colours
+
+    /** Parses "#RRGGBB" or "RRGGBB". Returns null if blank or invalid. */
+    public static TextColor parseHex(String input) {
+        if (input == null) return null;
+        String h = input.trim();
+        if (h.startsWith("#")) h = h.substring(1);
+        if (!h.matches("[0-9a-fA-F]{6}")) return null;
+        return TextColor.color(Integer.parseInt(h, 16));
+    }
+
+    public String validateColors(Player p, String hex, String grad) {
+        if (hex != null && !hex.isBlank()) {
+            if (!p.hasPermission("teams.color.hex")) return "You don't have permission to use custom hex colours.";
+            if (parseHex(hex) == null) return "Invalid hex colour. Use 6 digits like #FF8800.";
+        }
+        if (grad != null && !grad.isBlank()) {
+            if (!p.hasPermission("teams.color.gradient")) return "You don't have permission to use gradients.";
+            if (parseHex(grad) == null) return "Invalid gradient colour. Use 6 digits like #00CCFF.";
+        }
+        return null;
+    }
+
+    public void setColors(Team t, TeamColor preset, TextColor custom, TextColor gradientEnd) {
+        t.color(preset);
+        t.custom(custom);
+        t.gradientEnd(gradientEnd);
+        refreshVisuals(t);
+        save();
+    }
+
+    // ------------------------------------------------------------------ reload
+
+    /** Re-reads config.yml and teams.yml from disk. Returns the number of teams loaded. */
+    public int reload() {
+        plugin.reloadConfig();
+        load();
+        chatToggled.removeIf(u -> !playerTeam.containsKey(u));
+        refreshAllVisuals();
+        return teams.size();
+    }
+
     // ------------------------------------------------------------------ settings & home
 
-    public String applySettings(Player actor, String tag, TeamColor color, boolean friendlyFire) {
+    public String applySettings(Player actor, String tag, TeamColor color, String hex, String grad, boolean friendlyFire) {
         Team t = teamOf(actor.getUniqueId());
         if (t == null) return "You are not in a team.";
         if (t.role(actor.getUniqueId()) != Role.OWNER) return "Only the owner can change settings.";
         String err = validateTag(t, tag);
         if (err != null) return err;
+        err = validateColors(actor, hex, grad);
+        if (err != null) return err;
         t.tag(tag.toUpperCase(Locale.ROOT));
         t.color(color);
+        t.custom(parseHex(hex));
+        t.gradientEnd(parseHex(grad));
         t.friendlyFire(friendlyFire);
         refreshVisuals(t);
         save();
@@ -484,7 +535,7 @@ public final class TeamManager {
         target.sendMessage(Msg.info(Component.textOfChildren(
                 Component.text(actor.getName(), NamedTextColor.WHITE),
                 Component.text(" invited you to join ", NamedTextColor.GRAY),
-                Component.text(t.name(), t.color().color()),
+                t.colorize(t.name()),
                 Component.text("! ", NamedTextColor.GRAY),
                 open)));
         target.playSound(target.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1f, 1.4f);
