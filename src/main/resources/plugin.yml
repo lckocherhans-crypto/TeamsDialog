@@ -24,3 +24,12 @@ permissions:
   teams.bypass.warmup:
     description: Skip the team home teleport warmup
     default: op
+  teams.admin:
+    description: Reload the plugin with /team reload
+    default: op
+  teams.color.hex:
+    description: Use custom hex colours for a team
+    default: true
+  teams.color.gradient:
+    description: Use gradients for a team
+    default: true
