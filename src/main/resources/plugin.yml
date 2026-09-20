@@ -4,6 +4,7 @@ main: com.example.teams.TeamsPlugin
 api-version: '26.2'
 description: Dialog-driven teams with roles, invites, homes, team chat and a leaderboard.
 authors: [You]
+softdepend: [PlaceholderAPI]
 
 commands:
   team:
