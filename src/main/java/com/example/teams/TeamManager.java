@@ -175,7 +175,7 @@ public final class TeamManager {
     /** Colours names in chat/tab/nametags and adds a [TAG] prefix. Friendly fire is handled by our listener. */
     public void refreshVisuals(Team t) {
         org.bukkit.scoreboard.Team st = sbTeam(t);
-        st.color(t.color().color());
+        st.color(t.color().nearestNamed());
         st.prefix(Component.text("[" + t.tag() + "] ", t.color().color()));
         st.setAllowFriendlyFire(true);
         st.setCanSeeFriendlyInvisibles(true);
