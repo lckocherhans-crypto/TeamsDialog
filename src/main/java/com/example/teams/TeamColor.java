@@ -5,20 +5,37 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import java.util.Locale;
 
 public enum TeamColor {
-    RED("Red", NamedTextColor.RED),
-    GOLD("Gold", NamedTextColor.GOLD),
-    YELLOW("Yellow", NamedTextColor.YELLOW),
-    GREEN("Lime", NamedTextColor.GREEN),
-    DARK_GREEN("Forest", NamedTextColor.DARK_GREEN),
-    AQUA("Aqua", NamedTextColor.AQUA),
-    DARK_AQUA("Cyan", NamedTextColor.DARK_AQUA),
-    BLUE("Blue", NamedTextColor.BLUE),
-    DARK_BLUE("Navy", NamedTextColor.DARK_BLUE),
-    LIGHT_PURPLE("Pink", NamedTextColor.LIGHT_PURPLE),
-    DARK_PURPLE("Purple", NamedTextColor.DARK_PURPLE),
-    WHITE("White", NamedTextColor.WHITE),
-    GRAY("Gray", NamedTextColor.GRAY),
-    DARK_GRAY("Charcoal", NamedTextColor.DARK_GRAY);
+
+    RED("Red", TextColor.color(0xFF0000)),
+    DARK_RED("Dark Red", TextColor.color(0x8B0000)),
+    CORAL("Coral", TextColor.color(0xFF6F61)),
+    ORANGE("Orange", TextColor.color(0xFF8C00)),
+    GOLD("Gold", TextColor.color(0xFFAA00)),
+    YELLOW("Yellow", TextColor.color(0xFFFF00)),
+    LIME("Lime", TextColor.color(0xAAFF00)),
+    GREEN("Green", TextColor.color(0x00FF00)),
+    DARK_GREEN("Forest", TextColor.color(0x006400)),
+    MINT("Mint", TextColor.color(0x98FF98)),
+    TEAL("Teal", TextColor.color(0x00AFAF)),
+    AQUA("Aqua", TextColor.color(0x00FFFF)),
+    DARK_AQUA("Cyan", TextColor.color(0x00AAAA)),
+    SKY_BLUE("Sky Blue", TextColor.color(0x55DDFF)),
+    BLUE("Blue", TextColor.color(0x5555FF)),
+    DARK_BLUE("Navy", TextColor.color(0x00008B)),
+    PERIWINKLE("Periwinkle", TextColor.color(0x8FA8FF)),
+    LIGHT_PURPLE("Pink", TextColor.color(0xFF55FF)),
+    PINK("Pink Rose", TextColor.color(0xFF69B4)),
+    HOT_PINK("Hot Pink", TextColor.color(0xFF1493)),
+    MAGENTA("Magenta", TextColor.color(0xFF00FF)),
+    PURPLE("Purple", TextColor.color(0xAA00AA)),
+    VIOLET("Violet", TextColor.color(0x8A2BE2)),
+    LAVENDER("Lavender", TextColor.color(0xB57EDC)),
+    WHITE("White", TextColor.color(0xFFFFFF)),
+    SILVER("Silver", TextColor.color(0xC0C0C0)),
+    LIGHT_GRAY("Light Gray", TextColor.color(0xD3D3D3)),
+    GRAY("Gray", TextColor.color(0x808080)),
+    DARK_GRAY("Charcoal", TextColor.color(0x404040)),
+    BLACK("Black", TextColor.color(0x000000));
 
     private final String display;
     private final NamedTextColor color;
