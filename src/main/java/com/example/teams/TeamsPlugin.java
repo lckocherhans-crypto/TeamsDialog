@@ -26,6 +26,10 @@ public final class TeamsPlugin extends JavaPlugin {
                 cmd.setTabCompleter(executor);
             }
         }
+        if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
+            new TeamsExpansion(manager).register();
+            getLogger().info("Registered PlaceholderAPI placeholders (%teams_tag%, %teams_prefix%, ...).");
+        }
         getLogger().info("TeamsDialog enabled.");
     }
 
