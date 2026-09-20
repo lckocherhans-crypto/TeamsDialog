@@ -126,6 +126,84 @@ public final class TeamDialogs {
         else openTeamMenu(p, t);
     }
 
+    /**
+     * Back/Cancel target. Opens the dialog set in config.yml ("back-dialog", default asgard:teams),
+     * which can be a datapack dialog. If it is blank or invalid, falls back to the plugin's own menu.
+     */
+    public void goBack(Player p) {
+        String id = plugin.getConfig().getString("back-dialog", "asgard:teams");
+        if (id == null || id.isBlank() || !id.matches("[a-z0-9_.\\-]+:[a-z0-9_./\\-]+")) {
+            openMain(p);
+            return;
+        }
+        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "dialog show " + p.getName() + " " + id);
+    }
+
+    // ---- entry points used by /team <subcommand> (and datapack dialogs) ----
+
+    public void openCreate(Player p) {
+        if (mgr.teamOf(p.getUniqueId()) != null) {
+            p.sendMessage(Msg.err("You are already in a team."));
+            openMain(p);
+            return;
+        }
+        openCreate(p, null, "", "", TeamColor.AQUA, plugin.getConfig().getBoolean("default-friendly-fire", false));
+    }
+
+    public void openInviteList(Player p) {
+        Team t = mgr.teamOf(p.getUniqueId());
+        if (t == null) {
+            p.sendMessage(Msg.err("You are not in a team."));
+            return;
+        }
+        if (!t.role(p.getUniqueId()).canInvite()) {
+            p.sendMessage(Msg.err("Only officers and the owner can invite players."));
+            return;
+        }
+        openInviteList(p, null);
+    }
+
+    public void openLeave(Player p) {
+        Team t = mgr.teamOf(p.getUniqueId());
+        if (t == null) {
+            p.sendMessage(Msg.err("You are not in a team."));
+            return;
+        }
+        if (t.role(p.getUniqueId()) == Role.OWNER) {
+            p.sendMessage(Msg.err("Owners can't leave. Transfer ownership first, or disband the team."));
+            return;
+        }
+        confirm(p, title("Leave team?", NamedTextColor.RED),
+                text("You will leave " + t.name() + ".", NamedTextColor.GRAY),
+                text("Leave", NamedTextColor.RED),
+                pp -> {
+                    result(pp, mgr.leave(pp), "You left the team.");
+                    openMain(pp);
+                },
+                this::goBack);
+    }
+
+    public void openDisband(Player p) {
+        Team t = mgr.teamOf(p.getUniqueId());
+        if (t == null) {
+            p.sendMessage(Msg.err("You are not in a team."));
+            return;
+        }
+        if (t.role(p.getUniqueId()) != Role.OWNER) {
+            p.sendMessage(Msg.err("Only the owner can disband the team."));
+            return;
+        }
+        confirm(p, title("Disband team?", NamedTextColor.RED),
+                text("This deletes " + t.name() + " for everyone. It cannot be undone.", NamedTextColor.GRAY),
+                text("Disband", NamedTextColor.RED),
+                pp -> {
+                    String err = mgr.disband(pp);
+                    if (err != null) pp.sendMessage(Msg.err(err));
+                    openMain(pp);
+                },
+                this::goBack);
+    }
+
     private void openNoTeam(Player p) {
         int invites = mgr.pendingInvites(p.getUniqueId()).size();
         List<DialogBody> body = List.of(
@@ -142,7 +220,7 @@ public final class TeamDialogs {
         buttons.add(button(text("Top Teams", NamedTextColor.GOLD),
                 text("The kill leaderboard", NamedTextColor.GRAY), this::openTop));
 
-        p.showDialog(menu(title("Teams", NamedTextColor.AQUA), body, buttons, closeButton(), 1));
+        p.showDialog(menu(title("Teams", NamedTextColor.AQUA), body, buttons, backButton(this::goBack), 1));
     }
 
     private void openTeamMenu(Player p, Team t) {
@@ -207,7 +285,7 @@ public final class TeamDialogs {
                                 if (err != null) pp.sendMessage(Msg.err(err));
                                 openMain(pp);
                             },
-                            this::openMain)));
+                            this::goBack)));
         } else {
             b.add(button(text("Leave Team", NamedTextColor.RED),
                     text("Leave " + t.name(), NamedTextColor.GRAY), pl -> confirm(pl,
@@ -218,10 +296,10 @@ public final class TeamDialogs {
                                 result(pp, mgr.leave(pp), "You left the team.");
                                 openMain(pp);
                             },
-                            this::openMain)));
+                            this::goBack)));
         }
 
-        p.showDialog(menu(title(t.name(), c), body, b, closeButton(), 2));
+        p.showDialog(menu(title(t.name(), c), body, b, backButton(this::goBack), 2));
     }
 
     // =================================================================== create
@@ -262,7 +340,7 @@ public final class TeamDialogs {
 
         p.showDialog(dialog(title("Create a Team", NamedTextColor.GREEN), body, inputs,
                 DialogType.confirmation(create,
-                        button(text("Cancel", NamedTextColor.GRAY), null, 150, this::openMain))));
+                        button(text("Cancel", NamedTextColor.GRAY), null, 150, this::goBack))));
     }
 
     // =================================================================== settings
@@ -309,7 +387,7 @@ public final class TeamDialogs {
 
         p.showDialog(dialog(title("Team Settings", NamedTextColor.LIGHT_PURPLE), body, inputs,
                 DialogType.confirmation(save,
-                        button(text("Cancel", NamedTextColor.GRAY), null, 150, this::openMain))));
+                        button(text("Cancel", NamedTextColor.GRAY), null, 150, this::goBack))));
     }
 
     // =================================================================== members & radar
@@ -360,7 +438,7 @@ public final class TeamDialogs {
             body.add(line(text("Radar updates each time you open this page.", NamedTextColor.DARK_GRAY)));
         }
 
-        p.showDialog(menu(title("Members & Radar", t.color().color()), body, buttons, backButton(this::openMain), 1));
+        p.showDialog(menu(title("Members & Radar", t.color().color()), body, buttons, backButton(this::goBack), 1));
     }
 
     /** Compass arrow relative to where the viewer is currently facing. */
@@ -466,7 +544,7 @@ public final class TeamDialogs {
         }
 
         p.showDialog(menu(title("Invite Player", NamedTextColor.YELLOW), body, buttons,
-                backButton(this::openMain), 2));
+                backButton(this::goBack), 2));
     }
 
     public void openInvites(Player p) {
@@ -495,7 +573,7 @@ public final class TeamDialogs {
                     pl -> openInviteDetail(pl, t.id())));
         }
         p.showDialog(menu(title("Team Invites", NamedTextColor.YELLOW), body, buttons,
-                backButton(this::openMain), 1));
+                backButton(this::goBack), 1));
     }
 
     private void openInviteDetail(Player p, UUID teamId) {
@@ -555,6 +633,6 @@ public final class TeamDialogs {
         }
 
         p.showDialog(dialog(title("Top Teams", NamedTextColor.GOLD), body, List.of(),
-                DialogType.notice(button(text("« Back", NamedTextColor.GRAY), null, 150, this::openMain))));
+                DialogType.notice(button(text("« Back", NamedTextColor.GRAY), null, 150, this::goBack))));
     }
 }
