@@ -152,7 +152,7 @@ public final class TeamDialogs {
             openMain(p);
             return;
         }
-        openCreate(p, null, "", "", TeamColor.AQUA, plugin.getConfig().getBoolean("default-friendly-fire", false));
+        openCreate(p, null, "", "", TeamColor.AQUA, "", "", plugin.getConfig().getBoolean("default-friendly-fire", false));
     }
 
     public void openInviteList(Player p) {
@@ -218,7 +218,7 @@ public final class TeamDialogs {
         List<ActionButton> buttons = new ArrayList<>();
         buttons.add(button(text("Create Team", NamedTextColor.GREEN),
                 text("Pick a name, tag and colour", NamedTextColor.GRAY),
-                pl -> openCreate(pl, null, "", "", TeamColor.AQUA,
+                pl -> openCreate(pl, null, "", "", TeamColor.AQUA, "", "",
                         plugin.getConfig().getBoolean("default-friendly-fire", false))));
         buttons.add(button(text("Invites (" + invites + ")", invites > 0 ? NamedTextColor.YELLOW : NamedTextColor.GRAY),
                 text("View pending team invites", NamedTextColor.GRAY), this::openInvites));
@@ -230,14 +230,14 @@ public final class TeamDialogs {
 
     private void openTeamMenu(Player p, Team t) {
         Role role = t.role(p.getUniqueId());
-        TextColor c = t.color().color();
+        TextColor c = t.primary();
         long online = t.members().keySet().stream().filter(u -> Bukkit.getPlayer(u) != null).count();
         boolean chatOn = mgr.isChatToggled(p.getUniqueId());
 
         List<DialogBody> body = List.of(
                 line(Component.textOfChildren(
-                        text("[" + t.tag() + "] ", c),
-                        Component.text(t.name(), c, TextDecoration.BOLD))),
+                        t.colorize("[" + t.tag() + "] "),
+                        t.colorize(t.name()).decorate(TextDecoration.BOLD))),
                 line(Component.textOfChildren(
                         text("Rank ", NamedTextColor.GRAY), text(role.display(), role.color()),
                         text("  ·  Members ", NamedTextColor.GRAY),
@@ -309,10 +309,13 @@ public final class TeamDialogs {
 
     // =================================================================== create
 
-    private void openCreate(Player p, String error, String name, String tag, TeamColor color, boolean ff) {
+    private void openCreate(Player p, String error, String name, String tag, TeamColor color,
+                            String hex, String grad, boolean ff) {
         List<DialogBody> body = new ArrayList<>();
         if (error != null) body.add(line(text("✖ " + error, NamedTextColor.RED)));
         body.add(line(text("Name: 3–16 letters/numbers/_   ·   Tag: 2–4 letters/numbers", NamedTextColor.GRAY)));
+        body.add(line(text("Pick a colour, or type your own hex code. Add a gradient end colour for a gradient tag.",
+                NamedTextColor.DARK_GRAY)));
 
         List<SingleOptionDialogInput.OptionEntry> colors = new ArrayList<>();
         for (TeamColor tc : TeamColor.values()) {
@@ -324,20 +327,26 @@ public final class TeamDialogs {
                 DialogInput.text("name", Component.text("Team name")).width(250).initial(name).maxLength(16).build(),
                 DialogInput.text("tag", Component.text("Tag")).width(120).initial(tag).maxLength(4).build(),
                 DialogInput.singleOption("color", Component.text("Team colour"), colors).width(250).build(),
+                DialogInput.text("hex", Component.text("Custom hex (optional, e.g. #FF8800)")).width(250).initial(hex).maxLength(7).build(),
+                DialogInput.text("grad", Component.text("Gradient end (optional, e.g. #00CCFF)")).width(250).initial(grad).maxLength(7).build(),
                 DialogInput.bool("ff", Component.text("Allow friendly fire")).initial(ff).build());
 
         ActionButton create = formButton(text("Create", NamedTextColor.GREEN), null, 150, (pl, view) -> {
             String n = clean(view.getText("name"));
             String tg = clean(view.getText("tag"));
             TeamColor c = TeamColor.fromId(view.getText("color"));
+            String hx = clean(view.getText("hex"));
+            String gr = clean(view.getText("grad"));
             boolean f = Boolean.TRUE.equals(view.getBoolean("ff"));
 
             String err = mgr.validateNew(pl, n, tg);
+            if (err == null) err = mgr.validateColors(pl, hx, gr);
             if (err != null) {
-                openCreate(pl, err, n, tg, c, f);
+                openCreate(pl, err, n, tg, c, hx, gr, f);
                 return;
             }
             Team t = mgr.create(pl, n, tg, c, f);
+            mgr.setColors(t, c, TeamManager.parseHex(hx), TeamManager.parseHex(gr));
             pl.sendMessage(Msg.ok("Team " + t.name() + " created! Invite some friends."));
             pl.playSound(pl.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 1f, 1f);
             openMain(pl);
@@ -362,23 +371,32 @@ public final class TeamDialogs {
     private void openSettings(Player p, Team t, String error) {
         List<DialogBody> body = new ArrayList<>();
         if (error != null) body.add(line(text("✖ " + error, NamedTextColor.RED)));
-        body.add(line(text("Changes apply instantly to nametags, tab list and chat.", NamedTextColor.GRAY)));
+        body.add(line(Component.textOfChildren(text("Current: ", NamedTextColor.GRAY),
+                t.colorize("[" + t.tag() + "] " + t.name()))));
+        body.add(line(text("Changes apply instantly to nametags, tab list and chat. "
+                + "Leave hex blank to use the picked colour.", NamedTextColor.GRAY)));
 
         List<SingleOptionDialogInput.OptionEntry> colors = new ArrayList<>();
         for (TeamColor tc : TeamColor.values()) {
             colors.add(SingleOptionDialogInput.OptionEntry.create(
                     tc.id(), Component.text(tc.display(), tc.color()), tc == t.color()));
         }
+        String hexNow = t.custom() != null ? t.custom().asHexString() : "";
+        String gradNow = t.gradientEnd() != null ? t.gradientEnd().asHexString() : "";
 
         List<DialogInput> inputs = List.of(
                 DialogInput.text("tag", Component.text("Tag")).width(120).initial(t.tag()).maxLength(4).build(),
                 DialogInput.singleOption("color", Component.text("Team colour"), colors).width(250).build(),
+                DialogInput.text("hex", Component.text("Custom hex (optional, e.g. #FF8800)")).width(250).initial(hexNow).maxLength(7).build(),
+                DialogInput.text("grad", Component.text("Gradient end (optional, e.g. #00CCFF)")).width(250).initial(gradNow).maxLength(7).build(),
                 DialogInput.bool("ff", Component.text("Allow friendly fire")).initial(t.friendlyFire()).build());
 
         ActionButton save = formButton(text("Save", NamedTextColor.GREEN), null, 150, (pl, view) -> {
             String err = mgr.applySettings(pl,
                     clean(view.getText("tag")),
                     TeamColor.fromId(view.getText("color")),
+                    clean(view.getText("hex")),
+                    clean(view.getText("grad")),
                     Boolean.TRUE.equals(view.getBoolean("ff")));
             if (err != null) {
                 Team cur = mgr.teamOf(pl.getUniqueId());
@@ -430,7 +448,7 @@ public final class TeamDialogs {
 
             body.add(line(Component.textOfChildren(
                     text(r.symbol() + " ", r.color()),
-                    text(name, t.color().color()),
+                    t.colorize(name),
                     text("   ", NamedTextColor.GRAY),
                     status)));
 
@@ -443,7 +461,7 @@ public final class TeamDialogs {
             body.add(line(text("Radar updates each time you open this page.", NamedTextColor.DARK_GRAY)));
         }
 
-        p.showDialog(menu(title("Members & Radar", t.color().color()), body, buttons, backButton(this::goBack), 1));
+        p.showDialog(menu(title("Members & Radar", t.primary()), body, buttons, backButton(this::goBack), 1));
     }
 
     /** Compass arrow relative to where the viewer is currently facing. */
@@ -470,7 +488,7 @@ public final class TeamDialogs {
         String name = mgr.nameOf(target);
 
         List<DialogBody> body = List.of(line(Component.textOfChildren(
-                text(name, t.color().color()), text("  ·  ", NamedTextColor.DARK_GRAY),
+                t.colorize(name), text("  ·  ", NamedTextColor.DARK_GRAY),
                 text(theirs.display(), theirs.color()))));
 
         List<ActionButton> b = new ArrayList<>();
@@ -572,7 +590,7 @@ public final class TeamDialogs {
             if (t == null) continue;
             String from = mgr.nameOf(inv.inviter());
             buttons.add(button(
-                    Component.textOfChildren(text("[" + t.tag() + "] ", t.color().color()),
+                    Component.textOfChildren(t.colorize("[" + t.tag() + "] "),
                             text(t.name(), NamedTextColor.WHITE)),
                     text("Invited by " + from, NamedTextColor.GRAY),
                     pl -> openInviteDetail(pl, t.id())));
@@ -590,11 +608,11 @@ public final class TeamDialogs {
         long online = t.members().keySet().stream().filter(u -> Bukkit.getPlayer(u) != null).count();
         Component info = Component.textOfChildren(
                 text("Join ", NamedTextColor.GRAY),
-                text("[" + t.tag() + "] " + t.name(), t.color().color()),
+                t.colorize("[" + t.tag() + "] " + t.name()),
                 text("?\n" + t.members().size() + " members (" + online + " online)  ·  "
                         + t.kills() + " kills", NamedTextColor.GRAY));
 
-        p.showDialog(dialog(title("Team Invite", t.color().color()), List.of(line(info)), List.of(),
+        p.showDialog(dialog(title("Team Invite", t.primary()), List.of(line(info)), List.of(),
                 DialogType.confirmation(
                         button(text("Accept", NamedTextColor.GREEN), null, 150, pl -> {
                             String err = mgr.accept(pl, teamId);
@@ -630,7 +648,7 @@ public final class TeamDialogs {
             TextColor rankColor = i < 3 ? medalColors[i] : NamedTextColor.DARK_GRAY;
             Component row = Component.textOfChildren(
                     text(rank + " ", rankColor),
-                    text("[" + t.tag() + "] ", t.color().color()),
+                    t.colorize("[" + t.tag() + "] "),
                     text(t.name(), NamedTextColor.WHITE),
                     text("  " + t.kills() + " kills · " + t.members().size() + " members", NamedTextColor.GRAY),
                     t == mine ? text("  ◄ you", NamedTextColor.GREEN) : Component.empty());
