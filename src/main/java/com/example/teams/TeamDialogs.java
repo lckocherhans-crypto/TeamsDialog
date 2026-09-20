@@ -87,6 +87,10 @@ public final class TeamDialogs {
 
     private Dialog menu(Component title, List<DialogBody> body, List<ActionButton> buttons,
                         ActionButton exit, int columns) {
+        // Paper rejects a multi-action dialog with zero actions, so fall back to a notice.
+        if (buttons.isEmpty()) {
+            return dialog(title, body, List.of(), DialogType.notice(exit));
+        }
         return dialog(title, body, List.of(), DialogType.multiAction(buttons, exit, columns));
     }
 
