@@ -24,6 +24,16 @@ public final class TeamCommand implements CommandExecutor, TabCompleter {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (command.getName().equalsIgnoreCase("team") && args.length >= 1 && args[0].equalsIgnoreCase("reload")) {
+            if (!sender.hasPermission("teams.admin")) {
+                sender.sendMessage(Msg.err("You don't have permission to do that."));
+                return true;
+            }
+            int n = mgr.reload();
+            sender.sendMessage(Msg.ok("Reloaded config.yml and teams.yml (" + n + " teams)."));
+            return true;
+        }
+
         if (!(sender instanceof Player p)) {
             sender.sendMessage("Only players can use team commands.");
             return true;
@@ -70,7 +80,9 @@ public final class TeamCommand implements CommandExecutor, TabCompleter {
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (command.getName().equalsIgnoreCase("team") && args.length == 1) {
             String prefix = args[0].toLowerCase(Locale.ROOT);
-            return SUB.stream().filter(s -> s.startsWith(prefix)).toList();
+            List<String> options = new java.util.ArrayList<>(SUB);
+            if (sender.hasPermission("teams.admin")) options.add("reload");
+            return options.stream().filter(s -> s.startsWith(prefix)).toList();
         }
         return List.of();
     }
