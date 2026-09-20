@@ -51,9 +51,14 @@ public final class TeamDialogs {
 
     private static DialogBody line(Component c) { return DialogBody.plainMessage(c); }
 
+    /** Removes all colour from a button label (recursively) so buttons use the default Minecraft look. */
+    private static Component plain(Component c) {
+        return c.color(null).children(c.children().stream().map(TeamDialogs::plain).toList());
+    }
+
     private ActionButton formButton(Component label, Component tooltip, int width,
                                     BiConsumer<Player, DialogResponseView> action) {
-        return ActionButton.create(label, tooltip, width,
+        return ActionButton.create(plain(label), tooltip, width,
                 DialogAction.customClick((view, audience) -> {
                     if (audience instanceof Player p) action.accept(p, view);
                 }, OPTS));
@@ -72,7 +77,7 @@ public final class TeamDialogs {
     }
 
     private ActionButton closeButton() {
-        return ActionButton.create(text("Close", NamedTextColor.GRAY), null, 200, null);
+        return ActionButton.create(Component.text("Close"), null, 200, null);
     }
 
     private Dialog dialog(Component title, List<DialogBody> body, List<DialogInput> inputs, DialogType type) {
