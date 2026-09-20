@@ -12,7 +12,7 @@ import java.util.Locale;
 
 public final class TeamCommand implements CommandExecutor, TabCompleter {
 
-    private static final List<String> SUB = List.of("invites", "top", "home", "chat");
+    private static final List<String> SUB = List.of("create", "invite", "members", "invites", "leave", "disband", "top", "home", "chat");
 
     private final TeamManager mgr;
     private final TeamDialogs dialogs;
@@ -49,6 +49,11 @@ public final class TeamCommand implements CommandExecutor, TabCompleter {
         }
 
         switch (args[0].toLowerCase(Locale.ROOT)) {
+            case "create" -> dialogs.openCreate(p);
+            case "invite" -> dialogs.openInviteList(p);
+            case "members", "view" -> dialogs.openMembers(p);
+            case "leave" -> dialogs.openLeave(p);
+            case "disband" -> dialogs.openDisband(p);
             case "invites" -> dialogs.openInvites(p);
             case "top" -> dialogs.openTop(p);
             case "home" -> mgr.teleportHome(p);
