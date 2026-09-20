@@ -1,53 +1,60 @@
 package com.example.teams;
 
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
 
 import java.util.Locale;
 
+/**
+ * Selectable team colours (in rainbow order, since the picker cycles through them).
+ * Old constant names are kept so existing saved teams still load.
+ */
 public enum TeamColor {
-
-    RED("Red", TextColor.color(0xFF0000)),
-    DARK_RED("Dark Red", TextColor.color(0x8B0000)),
-    CORAL("Coral", TextColor.color(0xFF6F61)),
-    ORANGE("Orange", TextColor.color(0xFF8C00)),
-    GOLD("Gold", TextColor.color(0xFFAA00)),
-    YELLOW("Yellow", TextColor.color(0xFFFF00)),
-    LIME("Lime", TextColor.color(0xAAFF00)),
-    GREEN("Green", TextColor.color(0x00FF00)),
-    DARK_GREEN("Forest", TextColor.color(0x006400)),
-    MINT("Mint", TextColor.color(0x98FF98)),
-    TEAL("Teal", TextColor.color(0x00AFAF)),
-    AQUA("Aqua", TextColor.color(0x00FFFF)),
-    DARK_AQUA("Cyan", TextColor.color(0x00AAAA)),
-    SKY_BLUE("Sky Blue", TextColor.color(0x55DDFF)),
-    BLUE("Blue", TextColor.color(0x5555FF)),
-    DARK_BLUE("Navy", TextColor.color(0x00008B)),
-    PERIWINKLE("Periwinkle", TextColor.color(0x8FA8FF)),
-    LIGHT_PURPLE("Pink", TextColor.color(0xFF55FF)),
-    PINK("Pink Rose", TextColor.color(0xFF69B4)),
-    HOT_PINK("Hot Pink", TextColor.color(0xFF1493)),
-    MAGENTA("Magenta", TextColor.color(0xFF00FF)),
-    PURPLE("Purple", TextColor.color(0xAA00AA)),
-    VIOLET("Violet", TextColor.color(0x8A2BE2)),
-    LAVENDER("Lavender", TextColor.color(0xB57EDC)),
-    WHITE("White", TextColor.color(0xFFFFFF)),
-    SILVER("Silver", TextColor.color(0xC0C0C0)),
-    LIGHT_GRAY("Light Gray", TextColor.color(0xD3D3D3)),
-    GRAY("Gray", TextColor.color(0x808080)),
-    DARK_GRAY("Charcoal", TextColor.color(0x404040)),
-    BLACK("Black", TextColor.color(0x000000));
+    RED("Red", 0xFF5555),
+    DARK_RED("Dark Red", 0xAA0000),
+    CORAL("Coral", 0xFF6F61),
+    ORANGE("Orange", 0xFF8C00),
+    GOLD("Gold", 0xFFAA00),
+    YELLOW("Yellow", 0xFFFF55),
+    LIME("Lime", 0xAAFF00),
+    GREEN("Green", 0x55FF55),
+    DARK_GREEN("Forest", 0x00AA00),
+    MINT("Mint", 0x98FF98),
+    TEAL("Teal", 0x20B2AA),
+    AQUA("Aqua", 0x55FFFF),
+    DARK_AQUA("Cyan", 0x00AAAA),
+    SKY_BLUE("Sky Blue", 0x55DDFF),
+    BLUE("Blue", 0x5555FF),
+    DARK_BLUE("Navy", 0x0000AA),
+    INDIGO("Indigo", 0x6A5ACD),
+    DARK_PURPLE("Purple", 0xAA00AA),
+    VIOLET("Violet", 0xB57EDC),
+    MAGENTA("Magenta", 0xFF00FF),
+    LIGHT_PURPLE("Pink", 0xFF55FF),
+    HOT_PINK("Hot Pink", 0xFF69B4),
+    BROWN("Brown", 0xB5651D),
+    WHITE("White", 0xFFFFFF),
+    SILVER("Silver", 0xC0C0C0),
+    GRAY("Gray", 0xAAAAAA),
+    DARK_GRAY("Charcoal", 0x555555);
 
     private final String display;
-    private final NamedTextColor color;
+    private final TextColor color;
 
-    TeamColor(String display, NamedTextColor color) {
+    TeamColor(String display, int rgb) {
         this.display = display;
-        this.color = color;
+        this.color = TextColor.color(rgb);
     }
 
     public String id() { return name().toLowerCase(Locale.ROOT); }
     public String display() { return display; }
-    public NamedTextColor color() { return color; }
+    public TextColor color() { return color; }
+
+    /** Scoreboard teams only support the 16 vanilla colours, so pick the closest one. */
+    public NamedTextColor nearestNamed() { return NamedTextColor.nearestTo(color); }
+
+    /** Hex code for TAB / PlaceholderAPI, e.g. "&#FF5555". */
+    public String hexCode() { return "&" + color.asHexString().toUpperCase(Locale.ROOT); }
 
     public static TeamColor fromId(String id) {
         if (id != null) {
