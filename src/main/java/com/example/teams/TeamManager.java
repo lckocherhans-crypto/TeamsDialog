@@ -30,7 +30,7 @@ public final class TeamManager {
     public record Invite(UUID teamId, UUID inviter, long expiresAt) {}
 
     private static final Pattern NAME_PATTERN = Pattern.compile("[A-Za-z0-9_]{3,16}");
-    private static final Pattern TAG_PATTERN = Pattern.compile("[A-Za-z0-9]{2,4}");
+    private static final Pattern TAG_PATTERN = Pattern.compile("[A-Za-z0-9]{2,16}");
     private static final String SB_PREFIX = "tm_";
 
     private final TeamsPlugin plugin;
