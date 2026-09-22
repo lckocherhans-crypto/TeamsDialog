@@ -313,7 +313,7 @@ public final class TeamDialogs {
                             String hex, String grad, boolean ff) {
         List<DialogBody> body = new ArrayList<>();
         if (error != null) body.add(line(text("✖ " + error, NamedTextColor.RED)));
-        body.add(line(text("Name: 3–16 letters/numbers/_   ·   Tag: 2–4 letters/numbers", NamedTextColor.GRAY)));
+        body.add(line(text("Name: 3–16 letters/numbers/_   ·   Tag: 2–16 letters/numbers", NamedTextColor.GRAY)));
         body.add(line(text("Pick a colour, or type your own hex code. Add a gradient end colour for a gradient tag.",
                 NamedTextColor.DARK_GRAY)));
 
@@ -325,7 +325,7 @@ public final class TeamDialogs {
 
         List<DialogInput> inputs = List.of(
                 DialogInput.text("name", Component.text("Team name")).width(250).initial(name).maxLength(16).build(),
-                DialogInput.text("tag", Component.text("Tag")).width(120).initial(tag).maxLength(4).build(),
+                DialogInput.text("tag", Component.text("Tag")).width(120).initial(tag).maxLength(16).build(),
                 DialogInput.singleOption("color", Component.text("Team colour"), colors).width(250).build(),
                 DialogInput.text("hex", Component.text("Custom hex (optional, e.g. #FF8800)")).width(250).initial(hex).maxLength(7).build(),
                 DialogInput.text("grad", Component.text("Gradient end (optional, e.g. #00CCFF)")).width(250).initial(grad).maxLength(7).build(),
@@ -385,7 +385,7 @@ public final class TeamDialogs {
         String gradNow = t.gradientEnd() != null ? t.gradientEnd().asHexString() : "";
 
         List<DialogInput> inputs = List.of(
-                DialogInput.text("tag", Component.text("Tag")).width(120).initial(t.tag()).maxLength(4).build(),
+                DialogInput.text("tag", Component.text("Tag")).width(120).initial(t.tag()).maxLength(16).build(),
                 DialogInput.singleOption("color", Component.text("Team colour"), colors).width(250).build(),
                 DialogInput.text("hex", Component.text("Custom hex (optional, e.g. #FF8800)")).width(250).initial(hexNow).maxLength(7).build(),
                 DialogInput.text("grad", Component.text("Gradient end (optional, e.g. #00CCFF)")).width(250).initial(gradNow).maxLength(7).build(),
