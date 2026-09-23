@@ -37,7 +37,14 @@ public final class TeamsExpansion extends PlaceholderExpansion {
         return switch (params.toLowerCase()) {
             case "tag" -> t.tag();
             case "color" -> t.primaryCode();
-            case "prefix" -> t.tabColorize("[" + t.tag() + "]") + " &r";
+            case "prefix" -> {
+    String start = t.primary().asHexString();
+    if (t.gradientEnd() != null) {
+        String end = t.gradientEnd().asHexString();
+        yield "<gradient:" + start + ":" + end + ">[" + t.tag() + "]</gradient> ";
+    }
+    yield "<color:" + start + ">[" + t.tag() + "]</color> ";
+}
             case "name" -> t.name();
             case "role" -> t.role(player.getUniqueId()).display();
             case "kills" -> String.valueOf(t.kills());
